@@ -29,6 +29,20 @@ The purpose is to explore:
 
 The project implements a simple automation pipeline.
 
+Signal Sources
+│
+▼
+Constraint Engine
+│
+▼
+Decision / Risk Gate
+│
+▼
+Execution Adapter (Alpaca)
+│
+▼
+Logging + Redis + Artifacts
+
 The system prioritizes:
 
 - deterministic behavior
