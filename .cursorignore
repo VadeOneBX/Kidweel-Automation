@@ -1,0 +1,83 @@
+# --- Python envs / caches ---
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Data / artifacts / outputs ---
+data/raw/
+data/cache/
+data/tmp/
+data/processed/
+data/vendor/
+backtest_exports/
+models/
+logs/
+*.csv
+*.parquet
+*.feather
+*.db
+*.sqlite
+*.pkl
+*.joblib
+
+# Keep docs/examples if needed
+!data/README.md
+!backtest_exports/README.md
+
+# --- Notebook noise ---
+.ipynb_checkpoints/
+
+# --- Build / package ---
+build/
+dist/
+*.egg-info/
+
+# --- Docker / local infra noise ---
+redis_data/
+tmp/
+*.pid
+
+# --- Secrets / env ---
+.env
+.env.*
+!.env.example
+secrets/
+credentials/
+*.pem
+*.key
+
+# --- Git / editor ---
+.git/
+.cursor/cache/
+.DS_Store
+
+# --- Binary / media ---
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.mp4
+*.mov
+*.zip
+*.tar.gz
+
+# --- Research exports that should stay human-authored only ---
+research/archive/
+diagrams/archive/
+	
+
+Why this version works
+* Keeps Cursor focused on source + docs + config, not raw datasets or model outputs.
+* Prevents accidental model exposure of .env and key material.
+* Avoids having Cursor waste context on large backtest/export folders.
+* Still leaves research/, diagrams/, README.md, and infra files visible.
+If you want a stricter variant, also exclude:
+docker/**/*.log
+logs/**
+models/**

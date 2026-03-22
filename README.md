@@ -1,142 +1,111 @@
-# Kidweel Automation
+# Decision Systems Research Lab
 
-Automation and research tooling for systems operating under uncertainty.
+This repository documents a research environment for studying how signal quality changes across operating conditions.
 
-Pressure  
-Behavior  
-Consequence
+The lab began with intraday market structure research and evolved into a broader framework for:
 
----
+- environment classification
+- signal validation
+- constraint testing
+- automation design
 
-## Overview
+The goal is not building a trading bot.
 
-This repository documents the design of a containerized decision framework built to operate under uncertain conditions.
+The goal is building **repeatable decision systems under uncertainty**.
 
-Market data is used as a test environment to explore how structural constraints influence system behavior.
+## Research Questions
 
-The purpose of this project is **not trading performance**.
+This lab focuses on three core questions:
 
-The purpose is to explore:
+1. Does environment classification change signal quality?
+2. Do constraints distort decision outcomes?
+3. When should automation replace discretion?
 
-- automation architecture
-- constraint-based decision systems
-- reproducible research workflows
-- safe API integrations
+## Featured Artifacts
 
----
+- **Artifact 01 — Exit Constraint Removal**  
+  A small rule change materially altered the equity curve.
 
-## System Architecture
+- **Artifact 02 — Regime Divergence**  
+  The same signal produces different outcomes depending on environment.
 
-The project implements a simple automation pipeline.
+- **Artifact 03 — Signal Governance**  
+  A layered signal stack with escalation and kill-switch logic.
 
-Signal Sources
-│
-▼
-Constraint Engine
-│
-▼
-Decision / Risk Gate
-│
-▼
-Execution Adapter (Alpaca)
-│
-▼
-Logging + Redis + Artifacts
+- **Artifact 04 — OG vs INST**  
+  A comparison between a configuration-sensitive model and an environment-sensitive model.
 
-The system prioritizes:
+## Methodology
 
-- deterministic behavior
-- reproducible infrastructure
-- paper-first testing
-- explicit safety boundaries
+The framework separates:
 
----
+**Environment → Signal → Execution**
 
-## Research Artifacts
+Rather than optimizing signals directly, behavior is analyzed across regimes and rule sets.
 
-The repository includes research exploring how structural constraints alter system outcomes.
+### OG Model
 
-Examples:
+- confluence-heavy
+- TradingView-native
+- parameter-sensitive
+- expressive, but vulnerable to overfitting
 
-- Opening Range Breakout structural stop comparisons
-- Constraint-based execution gating
-- Behavioral responses to volatility regimes
+### INST Model
 
-These artifacts are intended as engineering documentation rather than trading signals.
+- external-input-dependent
+- regime and flow gated
+- less parameter-sensitive
+- harder to replicate purely inside TradingView
 
----
+## Why This Matters
 
-## Technology Stack
+The same principle applies beyond markets:
 
-Python  
-Docker  
-Redis  
-REST APIs  
-Containerized workflows
+- paid media environments change
+- auction conditions change
+- attribution confidence changes
+- user behavior changes
 
-Broker integration examples reference Alpaca's trading APIs.  
-Alpaca provides API-first access to trading and market data services.
+Signals must be evaluated within environment.
 
-Source: https://docs.alpaca.markets/docs/getting-started
+## Repository Structure
 
----
+```text
+docs/
+  artifacts/
+  audiences/
+research/
+diagrams/
+scripts/
+src/
+```
 
-## Development Notes
+## Audience
 
-This repository reflects a mix of original system design, iterative prototyping, and AI-assisted development.
+This project is relevant to:
 
-Documentation scaffolding and research summaries were developed with the assistance of ChatGPT and Cursor during the build process.
+- fintech / trading research
+- growth & paid media experimentation
+- product analytics
+- MBA admissions
+- decision science teams
 
-Final design decisions, architecture, and implementation choices remain the responsibility of the repository owner.
+## Architecture
 
----
+| Layer | Stack |
+| --- | --- |
+| Research | Python / pandas |
+| Backtesting | Custom ORB engine |
+| State | Redis |
+| Execution | Alpaca API |
+| Context | MCP |
+| Dev | Cursor |
+| Docs | Markdown |
 
-## Evidence of Work
+## Navigation
 
-This repository is intended as a public engineering artifact.
-
-It demonstrates:
-
-- containerized development workflows
-- API integration patterns
-- automation architecture
-- decision-system design under uncertainty
-- research documentation and comparative testing
-
-Private signal logic and execution thresholds are intentionally excluded.
-
----
-
-## Next Stage
-
-The next phase explores an MCP-enabled workflow where an LLM-assisted development environment can reason over system context and support controlled broker integration.
-
-Cursor supports MCP (Model Context Protocol) to connect external tools and data sources to development workflows.
-
-Sources:
-
-Cursor MCP documentation  
-https://cursor.com/docs/mcp
-
-Model Context Protocol overview  
-https://modelcontextprotocol.io/docs/getting-started/intro
-
----
-
-## Safety Boundary
-
-Any broker-connected workflow defaults to:
-
-- paper trading
-- environment gating
-- explicit human review
-
-Live execution should only occur after deliberate approval and testing.
-
----
-
-## Status
-
-Active research and engineering project.
-
-Architecture and tooling will continue evolving as the system matures.
+- [Lab overview](docs/overview.md)
+- [Research timeline](docs/research_timeline.md) — narrative spine
+- [Methodology](docs/methodology.md)
+- [Artifacts (evidence shelf)](docs/artifacts/)
+- [Audience lenses](docs/audiences/)
