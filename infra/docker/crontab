@@ -1,0 +1,5 @@
+# supercronic supports CRON_TZ
+CRON_TZ=America/New_York
+
+# Run the ML Strategy Scorer at 9:45 AM (Mon-Fri)
+45 9 * * 1-5 /usr/local/bin/python -m qops.engine.strategy_runner >> /app/logs/strategy.log 2>&1

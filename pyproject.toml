@@ -1,0 +1,43 @@
+[project]
+ name = "qops"
+ version = "0.1.0"
+ description = "0–3DTE options backtester w/ SpotGamma regime gating + Alpaca execution."
+ readme = "README.md"
+ requires-python = ">=3.11"
+ dependencies = [
+   "pandas>=2.2",
+   "numpy>=1.26",
+   "pyarrow>=15.0",
+   "python-dotenv>=1.0",
+   "pydantic>=2.6",
+   "rich>=13.7",
+   "tqdm>=4.66",
+   "requests>=2.31",
+   "databento>=0.44.0",
+   "alpaca-py>=0.37.0",
+   "py_vollib",
+   "joblib",
+   "fastapi>=0.111",
+   "uvicorn[standard]>=0.30",
+   "redis>=5.0",
+   "pytz>=2024.1",
+   "scikit-learn>=1.8.0",
+   "matplotlib>=3.8.0",
+   "scipy>=1.17.1",
+ ]
+
+[project.scripts]
+qops = "qops.cli.main:main"
+ 
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

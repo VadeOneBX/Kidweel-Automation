@@ -1,0 +1,222 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © VadeOne1
+
+//@version=6
+strategy("ORB 15m • 3m+1m • RR/ATR • SG Conductor • Institutional",
+     shorttitle="ORB V8 Inst",
+     overlay=true, 
+     pyramiding=0,
+     initial_capital=100000,
+     default_qty_type=strategy.percent_of_equity, 
+     default_qty_value=10)
+
+// ───────────────────────────────────────────────────────────────
+// Opening Range & Time Controls
+// ───────────────────────────────────────────────────────────────
+groupOR  = "Opening Range"
+tz       = input.string("America/New_York", "Timezone (IANA)", group=groupOR)
+orSess   = input.session("0930-0945", "OR Session (15m)", group=groupOR)
+tradeWin = input.session("0930-1600", "Trading Window (entries allowed)", group=groupOR)
+allowRunTillClose = input.bool(true, "Allow trades to run past window (no artificial flatten)", group=groupOR)
+
+allowLongs   = input.bool(true,  "Allow Longs",  group="Trading")
+allowShorts  = input.bool(true,  "Allow Shorts", group="Trading")
+dailyOnlyOne = input.bool(false, "At most one trade per side per day", group="Trading")
+
+// ───────────────────────────────────────────────────────────────
+// SG Walls Conductor
+// ───────────────────────────────────────────────────────────────
+groupSG        = "SG Walls Conductor"
+useSGConductor = input.bool(true, "Require SG conductor (block entries at walls)", group=groupSG)
+sgCallWall     = input.float(0.0, "Call wall (0=off)", group=groupSG, step=0.01)
+sgPutWall      = input.float(0.0, "Put wall (0=off)", group=groupSG, step=0.01)
+sgHedgeWall    = input.float(0.0, "Hedge wall (0=off)", group=groupSG, step=0.01)
+sgTolPct       = input.float(0.005, "Wall tolerance (0.5% = 0.005)", group=groupSG, step=0.001)
+
+atCallWall   = sgCallWall > 0 and math.abs(close - sgCallWall) / sgCallWall <= sgTolPct
+atPutWall    = sgPutWall > 0 and math.abs(close - sgPutWall) / sgPutWall <= sgTolPct
+atHedgeWall  = sgHedgeWall > 0 and math.abs(close - sgHedgeWall) / sgHedgeWall <= sgTolPct
+okToLongSG   = not useSGConductor or (not atCallWall and not atHedgeWall)
+okToShortSG  = not useSGConductor or (not atPutWall and not atHedgeWall)
+
+// ───────────────────────────────────────────────────────────────
+// Volume Filter & RR Presets
+// ───────────────────────────────────────────────────────────────
+groupVol = "Volume Filter"
+volMult  = input.float(1.5, "Volume Multiplier × SMA", group=groupVol, step=0.1)
+volLen   = input.int(9, "Volume SMA Length", group=groupVol, minval=1)
+
+groupST  = "Stops/Targets"
+rrChoice = input.string("Aggressive 5:1", "Risk/Reward Preset", options=["Conservative 2:1","Balanced 3:1","Aggressive 5:1","Custom"], group=groupST)
+stopMult_input   = input.float(0.5, "Custom Stop Mult (ORW)", group=groupST, step=0.05)
+targetMult_input = input.float(2.5, "Custom Target Mult (ORW)", group=groupST, step=0.05)
+useOrMidStop_input  = input.bool(false, "Use OR Midpoint as Stop", group=groupST)
+useHybridStop_input = input.bool(false, "Hybrid Stop (OR Mid vs ATR)", group=groupST)
+
+exitMode_input = input.string("Fixed RR", "Exit Mode", options=["Fixed RR","ATR Stop/TP","ATR Trailing","Percent Trailing"], group=groupST)
+atrExitLen     = input.int(14, "ATR Length (Exit)", group=groupST, minval=1)
+atrExitTf      = input.string("3", "ATR Timeframe (Exit)", group=groupST, options=["1","3","5","15","60"])
+trailAtrMult   = input.float(1.0, "ATR Trail Mult", group=groupST, step=0.05)
+trailPct       = input.float(0.75, "Percent Trail (%)", group=groupST, step=0.05)
+
+stopMult   = rrChoice == "Conservative 2:1" ? 1.0 : rrChoice == "Balanced 3:1" ? 0.75 : rrChoice == "Aggressive 5:1" ? 0.5 : stopMult_input
+targetMult = rrChoice == "Conservative 2:1" ? 2.0 : rrChoice == "Balanced 3:1" ? 2.25 : rrChoice == "Aggressive 5:1" ? 2.5 : targetMult_input
+
+// ───────────────────────────────────────────────────────────────
+// Sector Presets
+// ───────────────────────────────────────────────────────────────
+groupPresets = "Stops/Targets Presets"
+sectorPreset = input.string("Custom", "Sector Preset", group=groupPresets,
+     options = ["Custom", "Index ETFs (SPY/QQQ)", "Communications (ASTS)", "Consumer Durables (TSLA)", "Electronic Tech - Mega (AVGO)", "Electronic Tech - Spec (IONQ/RGTI)", "Finance (OPEN/SOFI/HOOD/AFRM)", "Funds (MAGS/ARKK)", "Non-Energy Minerals (MP/UUUU)", "Producer Mfg (OKLO/SMR)", "Retail - Mega (AMZN)", "Retail - Micro (NEGG)", "Tech Services - CryptoBeta (IREN/MSTR)", "Tech Services - LargeCap (NFLX/ORCL)", "Tech Services - Growth (SOUN/U)"])
+
+effStopMult = stopMult, effTargetMult = targetMult, effUseOrMidStop = useOrMidStop_input, effUseHybrid = useHybridStop_input, effExitMode = exitMode_input, effVolMult = volMult
+
+if sectorPreset == "Index ETFs (SPY/QQQ)"
+    effStopMult := 1.0, effTargetMult := 1.5, effUseOrMidStop := false, effUseHybrid := false, effExitMode := "ATR Stop/TP", effVolMult := 1.2
+if sectorPreset == "Communications (ASTS)"
+    effStopMult := 0.75, effTargetMult := 2.25, effUseOrMidStop := false, effUseHybrid := true, effExitMode := "ATR Stop/TP", effVolMult := 1.6
+if sectorPreset == "Consumer Durables (TSLA)"
+    effStopMult := 1.00, effTargetMult := 2.00, effUseOrMidStop := false, effUseHybrid := true, effExitMode := "Fixed RR", effVolMult := 1.3
+if sectorPreset == "Electronic Tech - Mega (AVGO)"
+    effStopMult := 1.00, effTargetMult := 2.00, effUseOrMidStop := false, effUseHybrid := false, effExitMode := "ATR Stop/TP", effVolMult := 1.2
+if sectorPreset == "Electronic Tech - Spec (IONQ/RGTI)"
+    effStopMult := 0.50, effTargetMult := 2.50, effUseOrMidStop := true, effUseHybrid := true, effExitMode := "ATR Trailing", effVolMult := 1.7
+if sectorPreset == "Finance (OPEN/SOFI/HOOD/AFRM)"
+    effStopMult := 0.75, effTargetMult := 2.25, effUseOrMidStop := true, effUseHybrid := true, effExitMode := "ATR Trailing", effVolMult := 1.5
+if sectorPreset == "Funds (MAGS/ARKK)"
+    effStopMult := 1.00, effTargetMult := 2.00, effUseOrMidStop := false, effUseHybrid := false, effExitMode := "ATR Stop/TP", effVolMult := 1.2
+if sectorPreset == "Non-Energy Minerals (MP/UUUU)"
+    effStopMult := 0.75, effTargetMult := 2.25, effUseOrMidStop := true, effUseHybrid := true, effExitMode := "Fixed RR", effVolMult := 1.6
+if sectorPreset == "Producer Mfg (OKLO/SMR)"
+    effStopMult := 0.50, effTargetMult := 2.50, effUseOrMidStop := true, effUseHybrid := true, effExitMode := "ATR Trailing", effVolMult := 1.8
+if sectorPreset == "Retail - Mega (AMZN)"
+    effStopMult := 1.00, effTargetMult := 2.00, effUseOrMidStop := false, effUseHybrid := true, effExitMode := "Fixed RR", effVolMult := 1.2
+if sectorPreset == "Retail - Micro (NEGG)"
+    effStopMult := 0.50, effTargetMult := 2.50, effUseOrMidStop := true, effUseHybrid := true, effExitMode := "ATR Trailing", effVolMult := 1.8
+if sectorPreset == "Tech Services - CryptoBeta (IREN/MSTR)"
+    effStopMult := 0.50, effTargetMult := 2.50, effUseOrMidStop := true, effUseHybrid := true, effExitMode := "ATR Trailing", effVolMult := 1.7
+if sectorPreset == "Tech Services - LargeCap (NFLX/ORCL)"
+    effStopMult := 1.00, effTargetMult := 2.00, effUseOrMidStop := false, effUseHybrid := false, effExitMode := "ATR Stop/TP", effVolMult := 1.2
+if sectorPreset == "Tech Services - Growth (SOUN/U)"
+    effStopMult := 0.75, effTargetMult := 2.25, effUseOrMidStop := true, effUseHybrid := true, effExitMode := "Fixed RR", effVolMult := 1.5
+
+// ───────────────────────────────────────────────────────────────
+// Opening Range Compute
+// ───────────────────────────────────────────────────────────────
+var float orh = na, var float orl = na, var float orm = na
+var bool or_done = false, var bool or_token = false
+or_sesh = not na(time(timeframe.period, orSess, tz))
+or_start = or_sesh and not or_sesh[1]
+or_end = or_sesh[1] and not or_sesh
+
+if or_start
+    orh := high, orl := low, or_token := false
+if or_sesh
+    orh := math.max(nz(orh, high), high)
+    orl := math.min(nz(orl, low), low)
+    if orh != orl
+        or_token := true
+if or_end and or_token
+    orm := math.avg(orh, orl), or_done := true
+
+orw = or_token ? (orh - orl) : na
+inTradeWindow = not na(time(timeframe.period, tradeWin, tz))
+
+// ───────────────────────────────────────────────────────────────
+// Multi-TF & Trend Tracking (Repaint-Safe)
+// ───────────────────────────────────────────────────────────────
+c3 = request.security(syminfo.tickerid, "3", close, lookahead=barmerge.lookahead_off)
+v3 = request.security(syminfo.tickerid, "3", volume, lookahead=barmerge.lookahead_off)
+sV3 = request.security(syminfo.tickerid, "3", ta.sma(volume, volLen), lookahead=barmerge.lookahead_off)
+c1 = request.security(syminfo.tickerid, "1", close, lookahead=barmerge.lookahead_off)
+v1 = request.security(syminfo.tickerid, "1", volume, lookahead=barmerge.lookahead_off)
+sV1 = request.security(syminfo.tickerid, "1", ta.sma(volume, volLen), lookahead=barmerge.lookahead_off)
+
+xup3 = request.security(syminfo.tickerid, "3", ta.crossover(close, orh), lookahead=barmerge.lookahead_off)
+xdown3 = request.security(syminfo.tickerid, "3", ta.crossunder(close, orl), lookahead=barmerge.lookahead_off)
+xup1 = request.security(syminfo.tickerid, "1", ta.crossover(close, orh), lookahead=barmerge.lookahead_off)
+xdown1 = request.security(syminfo.tickerid, "1", ta.crossunder(close, orl), lookahead=barmerge.lookahead_off)
+
+vwapSeries = ta.vwap(close)
+volDelta = ta.cum(close > open ? volume : -volume)
+longStillHealthy = close > vwapSeries and ta.change(volDelta) >= 0
+shortStillHealthy = close < vwapSeries and ta.change(volDelta) < 0
+
+volOK3 = v3 >= effVolMult * sV3
+volOK1 = v1 >= effVolMult * sV1
+validOR = or_done and or_token and orw > 0
+canTrade = inTradeWindow and validOR
+
+// ───────────────────────────────────────────────────────────────
+// Stops & Targets
+// ───────────────────────────────────────────────────────────────
+atrExit = request.security(syminfo.tickerid, atrExitTf, ta.atr(atrExitLen), lookahead=barmerge.lookahead_off)
+longTarget = orh + effTargetMult * orw
+shortTarget = orl - effTargetMult * orw
+longStop_ATR = strategy.position_avg_price - atrExit * effStopMult
+shortStop_ATR = strategy.position_avg_price + atrExit * effStopMult
+
+var float longStop = na, var float shortStop = na
+if effUseHybrid
+    longStop := math.max(orm, longStop_ATR)
+    shortStop := math.min(orm, shortStop_ATR)
+else
+    longStop := effUseOrMidStop ? orm : (orl - effStopMult * orw)
+    shortStop := effUseOrMidStop ? orm : (orh + effStopMult * orw)
+
+// ───────────────────────────────────────────────────────────────
+// Entries & Exits
+// ───────────────────────────────────────────────────────────────
+exitForLong(eid, xid) =>
+    if allowRunTillClose and longStillHealthy
+        strategy.exit(xid, from_entry=eid, stop=longStop_ATR, limit=longTarget)
+    else
+        if effExitMode == "Fixed RR"
+            strategy.exit(xid, from_entry=eid, stop=longStop, limit=longTarget)
+        else if effExitMode == "ATR Trailing"
+            tp = trailAtrMult * atrExit
+            strategy.exit(xid, from_entry=eid, trail_points=tp, trail_offset=tp)
+        else
+            strategy.exit(xid, from_entry=eid, stop=longStop_ATR, limit=longTarget)
+
+exitForShort(eid, xid) =>
+    if allowRunTillClose and shortStillHealthy
+        strategy.exit(xid, from_entry=eid, stop=shortStop_ATR, limit=shortTarget)
+    else
+        if effExitMode == "Fixed RR"
+            strategy.exit(xid, from_entry=eid, stop=shortStop, limit=shortTarget)
+        else if effExitMode == "ATR Trailing"
+            tp = trailAtrMult * atrExit
+            strategy.exit(xid, from_entry=eid, trail_points=tp, trail_offset=tp)
+        else
+            strategy.exit(xid, from_entry=eid, stop=shortStop_ATR, limit=shortTarget)
+
+long3 = canTrade and allowLongs and okToLongSG and xup3 and volOK3
+short3 = canTrade and allowShorts and okToShortSG and xdown3 and volOK3
+long1 = canTrade and allowLongs and okToLongSG and xup1 and volOK1
+short1 = canTrade and allowShorts and okToShortSG and xdown1 and volOK1
+
+if long3
+    strategy.entry("Long3m", strategy.long, comment="ORB Long 3m")
+    exitForLong("Long3m", "L3 Exit")
+if short3
+    strategy.entry("Short3m", strategy.short, comment="ORB Short 3m")
+    exitForShort("Short3m", "S3 Exit")
+if long1
+    strategy.entry("Long1m", strategy.long, comment="ORB Long 1m")
+    exitForLong("Long1m", "L1 Exit")
+if short1
+    strategy.entry("Short1m", strategy.short, comment="ORB Short 1m")
+    exitForShort("Short1m", "S1 Exit")
+
+if not allowRunTillClose and not inTradeWindow
+    strategy.close_all(comment="Window End")
+
+// ───────────────────────────────────────────────────────────────
+// Visuals & Alerts
+// ───────────────────────────────────────────────────────────────
+plot(orm, "OR Mid", color=color.gray, style=plot.style_linebr)
+var table badge = table.new(position.top_right, 1, 1, bgcolor=color.new(color.gray, 85))
+table.cell(badge, 0, 0, "Preset: " + sectorPreset, text_color=color.white, text_size=size.tiny)
+alertcondition(long3 or short3 or long1 or short1, "ORB Entry", "ORB Entry: {{ticker}}")
+
