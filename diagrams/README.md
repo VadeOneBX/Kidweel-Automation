@@ -1,19 +1,16 @@
-# Diagram Queue
+# Diagrams
 
-Planned visuals:
+Visual artifacts supporting research evolution:
 
-- exit_constraint.png
-- regime_divergence.png
-- signal_stack.png
-- og_vs_inst.png
+- architecture.png — system overview
+- research_timeline.png — discovery progression
+- exit_constraint.png — rule impact example
+- og_vs_inst.png — configuration vs input sensitivity
 
-## Visual Intent
+## System Architecture
 
-- **exit_constraint.png**
-  before / after equity curve + rule change callout
+![System Architecture](./diagrams/architecture.png)
 
-- **regime_divergence.png**
-  same setup, different environment
+## Research Timeline
 
-- **og_vs_inst.png**
-  knobs matter vs inputs matter
+![Research Timeline](./diagrams/research_timeline.svg)

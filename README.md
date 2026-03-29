@@ -1,13 +1,19 @@
 # Decision Systems Research Lab
 
+![Research](https://img.shields.io/badge/type-research-blue)
+![Status](https://img.shields.io/badge/status-active-lightgrey)
+![Focus](https://img.shields.io/badge/focus-decision--systems-black)
+![Stack](https://img.shields.io/badge/stack-python%20%7C%20redis%20%7C%20alpaca-green)
+![Scope](https://img.shields.io/badge/scope-regime--conditioned-orange)
+
 This repository documents a research environment for studying how signal quality changes across operating conditions.
 
 The lab began with intraday market structure research and evolved into a broader framework for:
 
 - environment classification
-- signal validation
+- signal governance
 - constraint testing
-- automation design
+- automation readiness
 
 The goal is not building a trading bot.
 
@@ -32,7 +38,10 @@ This lab focuses on three core questions:
 - **Artifact 03 — Signal Governance**  
   A layered signal stack with escalation and kill-switch logic.
 
-- **Artifact 04 — OG vs INST**  
+- **Artifact 04 — Manual to Automated Path**  
+  How repeatable workflow checkpoints became automation architecture candidates.
+
+- **Artifact 05 — OG vs INST**  
   A comparison between a configuration-sensitive model and an environment-sensitive model.
 
 ## Methodology

@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="Decision Systems Research Lab research timeline diagram">
+  <defs>
+    <style>
+      .bg { fill: #0f1115; }
+      .title { fill: #eceff4; font: 700 34px Arial, Helvetica, sans-serif; }
+      .subtitle { fill: #aeb7c6; font: 400 18px Arial, Helvetica, sans-serif; }
+      .phase { fill: #171a21; stroke: #434c5e; stroke-width: 2; rx: 18; ry: 18; }
+      .phaseAlt { fill: #13171d; stroke: #4c566a; stroke-width: 2; rx: 18; ry: 18; }
+      .h { fill: #eceff4; font: 700 22px Arial, Helvetica, sans-serif; }
+      .txt { fill: #d8dee9; font: 400 17px Arial, Helvetica, sans-serif; }
+      .small { fill: #94a3b8; font: 400 15px Arial, Helvetica, sans-serif; }
+      .label { fill: #111318; font: 700 14px Arial, Helvetica, sans-serif; }
+      .accent1 { fill: #88c0d0; }
+      .accent2 { fill: #a3be8c; }
+      .accent3 { fill: #ebcb8b; }
+      .accent4 { fill: #bf616a; }
+      .accent5 { fill: #b48ead; }
+      .accent6 { fill: #81a1c1; }
+      .line { stroke: #6b7280; stroke-width: 4; fill: none; marker-end: url(#arrow); }
+      .rail { stroke: #374151; stroke-width: 6; fill: none; }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#6b7280"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1600" height="900"/>
+
+  <text x="70" y="78" class="title">Research Timeline — Decision Systems Research Lab</text>
+  <text x="70" y="112" class="subtitle">From initial ORB experimentation to artifact preservation and systems framing</text>
+
+  <path class="rail" d="M120 450 L1480 450"/>
+
+  <rect class="phase" x="80" y="240" width="210" height="170"/>
+  <rect x="100" y="262" width="78" height="28" rx="14" class="accent6"/>
+  <text x="118" y="281" class="label">Phase 1</text>
+  <text x="100" y="324" class="h">Initial ORB</text>
+  <text x="100" y="354" class="txt">• baseline structure</text>
+  <text x="100" y="382" class="txt">• breakout observation</text>
+  <text x="100" y="470" class="small">5m / early tests</text>
+  <path class="line" d="M185 410 L185 450"/>
+
+  <rect class="phaseAlt" x="320" y="490" width="210" height="170"/>
+  <rect x="340" y="512" width="78" height="28" rx="14" class="accent4"/>
+  <text x="358" y="531" class="label">Phase 2</text>
+  <text x="340" y="574" class="h">Forced Exit</text>
+  <text x="340" y="604" class="txt">• pre-lunch rule</text>
+  <text x="340" y="632" class="txt">• duration constraint</text>
+  <text x="340" y="720" class="small">stability hypothesis</text>
+  <path class="line" d="M425 490 L425 450"/>
+
+  <rect class="phase" x="560" y="240" width="210" height="170"/>
+  <rect x="580" y="262" width="78" height="28" rx="14" class="accent2"/>
+  <text x="598" y="281" class="label">Phase 3</text>
+  <text x="580" y="324" class="h">Constraint Removed</text>
+  <text x="580" y="354" class="txt">• trades resolve</text>
+  <text x="580" y="382" class="txt">• expectancy shifts</text>
+  <text x="580" y="470" class="small">tail behavior appears</text>
+  <path class="line" d="M665 410 L665 450"/>
+
+  <rect class="phaseAlt" x="800" y="490" width="210" height="170"/>
+  <rect x="820" y="512" width="78" height="28" rx="14" class="accent1"/>
+  <text x="838" y="531" class="label">Phase 4</text>
+  <text x="820" y="574" class="h">Flow Integration</text>
+  <text x="820" y="604" class="txt">• confluence improves</text>
+  <text x="820" y="632" class="txt">• signal stack forms</text>
+  <text x="820" y="720" class="small">A1 / B1 / FB2 / NF1</text>
+  <path class="line" d="M905 490 L905 450"/>
+
+  <rect class="phase" x="1040" y="240" width="210" height="170"/>
+  <rect x="1060" y="262" width="78" height="28" rx="14" class="accent5"/>
+  <text x="1078" y="281" class="label">Phase 5</text>
+  <text x="1060" y="324" class="h">Regime Conditioning</text>
+  <text x="1060" y="354" class="txt">• environment first</text>
+  <text x="1060" y="382" class="txt">• NEG vs POS split</text>
+  <text x="1060" y="470" class="small">signal validity becomes conditional</text>
+  <path class="line" d="M1145 410 L1145 450"/>
+
+  <rect class="phaseAlt" x="1280" y="490" width="240" height="170"/>
+  <rect x="1300" y="512" width="78" height="28" rx="14" class="accent3"/>
+  <text x="1318" y="531" class="label">Phase 6</text>
+  <text x="1300" y="574" class="h">Artifact Preservation</text>
+  <text x="1300" y="604" class="txt">• docs and diagrams</text>
+  <text x="1300" y="632" class="txt">• repo as public artifact</text>
+  <text x="1300" y="720" class="small">research lab framing</text>
+  <path class="line" d="M1400 490 L1400 450"/>
+
+  <rect class="phase" x="120" y="760" width="1360" height="90"/>
+  <text x="150" y="812" class="txt">Discovery arc: structure → constraints → signal governance → regime awareness → public artifact</text>
+
+  <text x="70" y="880" class="small">Suggested placement: /diagrams/research_timeline.svg</text>
+</svg>

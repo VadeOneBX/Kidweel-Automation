@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="Decision Systems Research Lab architecture diagram">
+  <defs>
+    <style>
+      .bg { fill: #0f1115; }
+      .panel { fill: #171a21; stroke: #3b4252; stroke-width: 2; rx: 18; ry: 18; }
+      .panel2 { fill: #12151b; stroke: #4c566a; stroke-width: 2; rx: 14; ry: 14; }
+      .title { fill: #eceff4; font: 700 34px Arial, Helvetica, sans-serif; }
+      .subtitle { fill: #aeb7c6; font: 400 18px Arial, Helvetica, sans-serif; }
+      .h { fill: #eceff4; font: 700 22px Arial, Helvetica, sans-serif; }
+      .txt { fill: #d8dee9; font: 400 17px Arial, Helvetica, sans-serif; }
+      .small { fill: #94a3b8; font: 400 15px Arial, Helvetica, sans-serif; }
+      .label { fill: #111318; font: 700 14px Arial, Helvetica, sans-serif; }
+      .accent1 { fill: #88c0d0; }
+      .accent2 { fill: #a3be8c; }
+      .accent3 { fill: #ebcb8b; }
+      .accent4 { fill: #bf616a; }
+      .accent5 { fill: #b48ead; }
+      .line { stroke: #6b7280; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .dash { stroke: #4b5563; stroke-width: 2; stroke-dasharray: 8 8; fill: none; }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#6b7280"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1600" height="900"/>
+
+  <text x="70" y="78" class="title">Decision Systems Research Lab — Architecture</text>
+  <text x="70" y="112" class="subtitle">Environment → Signal → Execution framing, with research artifacts and governance preserved as the public layer</text>
+
+  <!-- top row -->
+  <rect class="panel" x="70" y="160" width="280" height="190"/>
+  <rect x="92" y="182" width="108" height="28" rx="14" class="accent5"/>
+  <text x="112" y="201" class="label">Environment</text>
+  <text x="92" y="244" class="h">Regime Layer</text>
+  <text x="92" y="276" class="txt">• Gamma regime</text>
+  <text x="92" y="304" class="txt">• Index structure</text>
+  <text x="92" y="332" class="txt">• Context classification</text>
+
+  <rect class="panel" x="390" y="160" width="280" height="190"/>
+  <rect x="412" y="182" width="86" height="28" rx="14" class="accent1"/>
+  <text x="432" y="201" class="label">Signal</text>
+  <text x="412" y="244" class="h">Confluence Layer</text>
+  <text x="412" y="276" class="txt">• ORB structure</text>
+  <text x="412" y="304" class="txt">• VWAP positioning</text>
+  <text x="412" y="332" class="txt">• Flow confirmation</text>
+
+  <rect class="panel" x="710" y="160" width="280" height="190"/>
+  <rect x="732" y="182" width="112" height="28" rx="14" class="accent3"/>
+  <text x="752" y="201" class="label">Governance</text>
+  <text x="732" y="244" class="h">Signal Stack</text>
+  <text x="732" y="276" class="txt">• A1 entry validation</text>
+  <text x="732" y="304" class="txt">• B1 profit protection</text>
+  <text x="732" y="332" class="txt">• FB2 / NF1 risk controls</text>
+
+  <rect class="panel" x="1030" y="160" width="500" height="190"/>
+  <rect x="1052" y="182" width="136" height="28" rx="14" class="accent2"/>
+  <text x="1072" y="201" class="label">Research Output</text>
+  <text x="1052" y="244" class="h">Artifact Layer</text>
+  <text x="1052" y="276" class="txt">• Dashboard surface</text>
+  <text x="1052" y="304" class="txt">• Constraint evolution</text>
+  <text x="1052" y="332" class="txt">• Regime divergence / OG vs INST framing</text>
+
+  <!-- arrows top -->
+  <path class="line" d="M350 255 C365 255, 372 255, 390 255"/>
+  <path class="line" d="M670 255 C685 255, 692 255, 710 255"/>
+  <path class="line" d="M990 255 C1005 255, 1012 255, 1030 255"/>
+
+  <!-- middle band -->
+  <rect class="panel2" x="70" y="420" width="1460" height="170"/>
+  <text x="100" y="462" class="h">System Spine</text>
+
+  <rect class="panel" x="100" y="488" width="210" height="72"/>
+  <text x="124" y="533" class="txt">Environment</text>
+
+  <rect class="panel" x="360" y="488" width="210" height="72"/>
+  <text x="395" y="533" class="txt">Signal Validation</text>
+
+  <rect class="panel" x="620" y="488" width="210" height="72"/>
+  <text x="664" y="533" class="txt">Constraint Tests</text>
+
+  <rect class="panel" x="880" y="488" width="210" height="72"/>
+  <text x="936" y="533" class="txt">Automation Design</text>
+
+  <rect class="panel" x="1140" y="488" width="360" height="72"/>
+  <text x="1172" y="533" class="txt">Documentation / GitHub Artifact</text>
+
+  <path class="line" d="M310 524 L360 524"/>
+  <path class="line" d="M570 524 L620 524"/>
+  <path class="line" d="M830 524 L880 524"/>
+  <path class="line" d="M1090 524 L1140 524"/>
+
+  <!-- bottom row -->
+  <rect class="panel" x="70" y="650" width="470" height="180"/>
+  <rect x="92" y="672" width="124" height="28" rx="14" class="accent4"/>
+  <text x="112" y="691" class="label">Core Inputs</text>
+  <text x="92" y="734" class="h">What changes behavior</text>
+  <text x="92" y="766" class="txt">• Regime classification</text>
+  <text x="92" y="794" class="txt">• Flow / signal quality</text>
+  <text x="92" y="822" class="txt">• Constraint design</text>
+
+  <rect class="panel" x="565" y="650" width="470" height="180"/>
+  <rect x="587" y="672" width="134" height="28" rx="14" class="accent1"/>
+  <text x="607" y="691" class="label">Public Repo</text>
+  <text x="587" y="734" class="h">What stays visible</text>
+  <text x="587" y="766" class="txt">• README / overview / architecture</text>
+  <text x="587" y="794" class="txt">• Artifact shelf and timeline</text>
+  <text x="587" y="822" class="txt">• Static diagrams and preserved dashboard</text>
+
+  <rect class="panel" x="1060" y="650" width="470" height="180"/>
+  <rect x="1082" y="672" width="156" height="28" rx="14" class="accent3"/>
+  <text x="1102" y="691" class="label">Boundary Rule</text>
+  <text x="1082" y="734" class="h">What stays out</text>
+  <text x="1082" y="766" class="txt">• Live execution claims</text>
+  <text x="1082" y="794" class="txt">• Broker / provider setup detail</text>
+  <text x="1082" y="822" class="txt">• Deployment and operational logic</text>
+
+  <path class="dash" d="M1035 740 L1060 740"/>
+  <path class="dash" d="M1035 770 L1060 770"/>
+  <path class="dash" d="M1035 800 L1060 800"/>
+
+  <text x="70" y="870" class="small">Suggested placement: /diagrams/architecture.svg</text>
+</svg>
