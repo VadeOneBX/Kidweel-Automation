@@ -40,7 +40,7 @@ from qops.strategy.selector import CandidateSelector
 
 # --- 3. CONFIGURATION & THRESHOLDS ---
 REPO_ROOT = Path(__file__).resolve().parent
-DEFAULT_SG_CSV = REPO_ROOT / "data" / "spotgamma" / "INTC_history_table_2026-03-07.csv"
+DEFAULT_SG_CSV = REPO_ROOT / "data" / "SG" / "INTC_history_table_2026-03-07.csv"
 DEFAULT_MODEL_DIR = REPO_ROOT / "models"
 
 # Step 1 Timezone & Financials
@@ -60,7 +60,7 @@ SHORT_DELTA_RANGE = (0.10, 0.50)
 LONG_DELTA_RANGE = (0.01, 0.25)
 SPREAD_WIDTH = (0.5, 10.0)
 
-def _sanitize_spotgamma_df(raw: pd.DataFrame) -> pd.DataFrame:
+def _sanitize_SG_df(raw: pd.DataFrame) -> pd.DataFrame:
     sg_df = raw.copy()
     sg_df.columns = sg_df.columns.str.strip().str.replace("\xa0", " ")
 
@@ -80,11 +80,11 @@ def run_training_pipeline(csv_path: Path, model_dir: Path, symbol: str, strategy
     print(f"🚀 Starting ML Training Pipeline for {symbol}")
     
     if not csv_path.exists():
-        print(f"🛑 FATAL: Could not find SpotGamma CSV at {csv_path}")
+        print(f"🛑 FATAL: Could not find SG CSV at {csv_path}")
         sys.exit(1)
 
     raw_sg = pd.read_csv(csv_path)
-    sg_df = _sanitize_spotgamma_df(raw_sg)
+    sg_df = _sanitize_SG_df(raw_sg)
     training_dates = sg_df.index.unique().tolist()
 
     master_training_data = []
@@ -192,7 +192,7 @@ def run_training_pipeline(csv_path: Path, model_dir: Path, symbol: str, strategy
 
 def _build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Train SyntheticMLScorer model artifacts.")
-    p.add_argument("--spotgamma-csv", type=Path, default=DEFAULT_SG_CSV, help="Path to SpotGamma history table CSV.")
+    p.add_argument("--SG-csv", type=Path, default=DEFAULT_SG_CSV, help="Path to SG history table CSV.")
     p.add_argument("--model-dir", type=Path, default=DEFAULT_MODEL_DIR, help="Directory to write model/scaler artifacts.")
     p.add_argument("--symbol", type=str, default=SYMBOL, help="Underlying symbol (e.g. INTC).")
     p.add_argument("--strategy-mode", type=str, default=STRATEGY_MODE)
@@ -205,7 +205,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = _build_arg_parser().parse_args(argv)
     run_training_pipeline(
-        args.spotgamma_csv, args.model_dir, symbol=args.symbol, strategy_mode=args.strategy_mode,
+        args.SG_csv, args.model_dir, symbol=args.symbol, strategy_mode=args.strategy_mode,
         entry_h=args.entry_hour, entry_m=args.entry_minute, exit_h=args.exit_hour, exit_m=args.exit_minute
     )
     return 0

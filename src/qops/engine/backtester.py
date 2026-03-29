@@ -94,14 +94,14 @@ def evaluate_intraday_risk(intraday_options_data: pd.DataFrame, entry_trade: dic
 def run_backtest():
     print(f"🚀 Starting Backtest: {SYMBOL} | Strategy: {STRATEGY_MODE}")
     
-    # Load SpotGamma Data
-    # --- LOAD AND SANITIZE SPOTGAMMA DATA ---
-    sg_df = pd.read_csv("data/spotgamma/INTC_history_table_2026-03-07.csv")
+    # Load SG Data
+    # --- LOAD AND SANITIZE SG DATA ---
+    sg_df = pd.read_csv("data/SG/INTC_history_table_2026-03-07.csv")
     
     # 1. Strip hidden characters and whitespace from column headers
     sg_df.columns = sg_df.columns.str.strip().str.replace('\xa0', ' ')
     
-    # 2. Fix SpotGamma's leading single quotes on negative numbers & remove commas
+    # 2. Fix SG's leading single quotes on negative numbers & remove commas
     for col in sg_df.columns:
         if sg_df[col].dtype == 'object' and col != 'Trade Date' and 'Exp' not in col:
             try:

@@ -1,7 +1,7 @@
 [project]
  name = "qops"
  version = "0.1.0"
- description = "0–3DTE options backtester w/ SpotGamma regime gating + Alpaca execution."
+ description = "0–3DTE options backtester w/regime gating + Alpaca execution."
  readme = "README.md"
  requires-python = ">=3.11"
  dependencies = [
