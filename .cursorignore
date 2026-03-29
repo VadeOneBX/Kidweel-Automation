@@ -71,13 +71,6 @@ credentials/
 research/archive/
 diagrams/archive/
 	
-
-Why this version works
-* Keeps Cursor focused on source + docs + config, not raw datasets or model outputs.
-* Prevents accidental model exposure of .env and key material.
-* Avoids having Cursor waste context on large backtest/export folders.
-* Still leaves research/, diagrams/, README.md, and infra files visible.
-If you want a stricter variant, also exclude:
 docker/**/*.log
 logs/**
 models/**

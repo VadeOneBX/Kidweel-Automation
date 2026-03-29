@@ -111,6 +111,26 @@ This project is relevant to:
 | Dev | Cursor |
 | Docs | Markdown |
 
+## Diagrams
+
+Vector overviews (SVG). Expand a section to load the figure.
+
+<details>
+<summary>Architecture overview</summary>
+
+![Architecture overview](diagrams/architecture.svg)
+
+</details>
+
+<details>
+<summary>Research timeline</summary>
+
+![Research timeline](diagrams/research_timeline.svg)
+
+</details>
+
+More context: [diagrams/README.md](diagrams/README.md).
+
 ## Navigation
 
 - [Lab overview](docs/overview.md)

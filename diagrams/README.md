@@ -1,16 +1,25 @@
 # Diagrams
 
-Visual artifacts supporting research evolution:
+Visual artifacts supporting research evolution (SVG, GitHub-friendly):
 
-- architecture.png — system overview
-- research_timeline.png — discovery progression
-- exit_constraint.png — rule impact example
-- og_vs_inst.png — configuration vs input sensitivity
+- `architecture.svg` — system overview
+- `research_timeline.svg` — discovery progression
 
-## System Architecture
+Paths below are relative to **this folder** (`diagrams/`). Expand a section to view.
 
-![System Architecture](./diagrams/architecture.png)
+<details>
+<summary>System architecture</summary>
 
-## Research Timeline
+![System architecture](./architecture.svg)
 
-![Research Timeline](./diagrams/research_timeline.svg)
+</details>
+
+<details>
+<summary>Research timeline</summary>
+
+![Research timeline](./research_timeline.svg)
+
+</details>
+
+If an image does not render in the GitHub preview, open the file directly:  
+[architecture.svg](./architecture.svg) · [research_timeline.svg](./research_timeline.svg)
