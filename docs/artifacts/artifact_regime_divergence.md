@@ -14,26 +14,14 @@ Observed behavior:
 - VWAP hold
 - trend persistence
 
-## POS Regime
-
-Observed behavior:
+POS regime:
 
 - breakout failure
-- reversion to VWAP
-- range compression
+- VWAP magnet
+- compression
 
-## Interpretation
+Conclusion:
 
-Signal validity is environment dependent.
+Signal validity depends on environment.
 
 Environment classification must precede execution.
-
-## Generalization
-
-This applies beyond markets:
-
-- same creative, different auction behavior
-- same feature, different user response
-- same tactic, different channel conditions
-
-Environment matters.

@@ -7,7 +7,8 @@ This folder contains concise research artifacts designed for fast review.
 - Artifact 01 — Exit Constraint Removal
 - Artifact 02 — Regime Divergence
 - Artifact 03 — Signal Governance
-- Artifact 04 — OG vs INST
+- Artifact 04 — Manual to Automated Path
+- Artifact 05 — OG vs INST
 
 ## Purpose
 

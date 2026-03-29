@@ -1,4 +1,4 @@
-# Artifact 04 — OG vs INST System Behavior
+# Artifact 05 — OG vs INST System Behavior
 
 ## Two Design Philosophies
 

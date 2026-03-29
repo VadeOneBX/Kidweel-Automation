@@ -47,4 +47,6 @@ The constraint changed system behavior more than expected.
 
 The lesson is broader than trading:
 
-**constraints can distort results as much as signals do.**
+- regime dependence
+- signal governance
+- automation readiness
