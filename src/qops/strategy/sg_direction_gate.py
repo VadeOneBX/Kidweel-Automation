@@ -138,6 +138,11 @@ def classify_direction(source: SpotGammaContext | RankedTicker) -> DirectionGate
     )
 
 
+def evaluate(source: SpotGammaContext | RankedTicker) -> DirectionGateResult:
+    """Backward-compatible alias for ``classify_direction``."""
+    return classify_direction(source)
+
+
 def _fields(source: SpotGammaContext | RankedTicker) -> tuple[str, str, float, float | None, float | None]:
     if isinstance(source, SpotGammaContext):
         return (
