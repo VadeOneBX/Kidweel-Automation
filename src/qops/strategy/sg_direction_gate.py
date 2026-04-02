@@ -2,7 +2,7 @@
 src/qops/strategy/sg_direction_gate.py
 ─────────────────────────────────────────────────────────────────────────────
 SpotGamma-driven direction gate: map latest context into an allowed stance
-(LONG_ONLY, LONG_GAMMA_HEDGE, or SKIP).
+(LONG_ONLY, LONG_GAMMA_HEDGE, SHORT_ONLY, SHORT_GAMMA_HEDGE, or SKIP).
 
 Uses only SpotGamma-derived fields (``regime_label``, ``confidence``, ``vrp_z``,
 ``gamma_ratio``) from ``SpotGammaContext`` or downstream ``RankedTicker``. No
@@ -30,6 +30,8 @@ _VRPZ_UNSTABLE_MIN: Final[float] = 0.75
 class AllowedDirection(StrEnum):
     LONG_ONLY = "LONG_ONLY"
     LONG_GAMMA_HEDGE = "LONG_GAMMA_HEDGE"
+    SHORT_ONLY = "SHORT_ONLY"
+    SHORT_GAMMA_HEDGE = "SHORT_GAMMA_HEDGE"
     SKIP = "SKIP"
 
 
@@ -49,8 +51,8 @@ def classify_direction(source: SpotGammaContext | RankedTicker) -> DirectionGate
     ``RankedTicker`` carrying the same fields.
 
     **SKIP** — ``confidence`` < threshold, unknown ``regime_label``, or
-    ``NEUTRAL`` / ``SELL_PREMIUM``; also when ``vrp_z`` is missing for
-    **LONG_ONLY** (nontrivial long path requires a VRP z-score).
+    ``NEUTRAL``; also when ``vrp_z`` is missing for **LONG_ONLY** / **SHORT_ONLY**
+    (nontrivial directional paths require a VRP z-score).
 
     **LONG_GAMMA_HEDGE** — ``BUY_PREMIUM`` or ``SQUEEZE_UP``, confidence OK, and
     either put-heavy ``gamma_ratio`` **or** (required) ``vrp_z`` present with
@@ -59,6 +61,13 @@ def classify_direction(source: SpotGammaContext | RankedTicker) -> DirectionGate
 
     **LONG_ONLY** — same supportive regimes, confidence OK, not in the hedge
     branch, and ``vrp_z`` present.
+
+    **SHORT_GAMMA_HEDGE** — ``SELL_PREMIUM``, confidence OK, and either call-heavy
+    ``gamma_ratio`` **or** (required) ``vrp_z`` present with ``vrp_z <=`` unstable
+    threshold. Unstable vol never triggers hedge without finite ``vrp_z``.
+
+    **SHORT_ONLY** — ``SELL_PREMIUM``, confidence OK, not in the hedge branch,
+    and ``vrp_z`` present.
     """
     ticker, regime_label, confidence, vrp_z, gamma_ratio = _fields(source)
     regime = _parse_regime(regime_label)
@@ -83,7 +92,7 @@ def classify_direction(source: SpotGammaContext | RankedTicker) -> DirectionGate
             notes=_note_vrp_z(vrp_z),
         )
 
-    if regime in (RegimeLabel.NEUTRAL, RegimeLabel.SELL_PREMIUM):
+    if regime == RegimeLabel.NEUTRAL:
         return DirectionGateResult(
             ticker=ticker,
             allowed_direction=AllowedDirection.SKIP,
@@ -93,7 +102,7 @@ def classify_direction(source: SpotGammaContext | RankedTicker) -> DirectionGate
             notes=_note_vrp_z(vrp_z),
         )
 
-    if regime not in (RegimeLabel.BUY_PREMIUM, RegimeLabel.SQUEEZE_UP):
+    if regime not in (RegimeLabel.BUY_PREMIUM, RegimeLabel.SQUEEZE_UP, RegimeLabel.SELL_PREMIUM):
         return DirectionGateResult(
             ticker=ticker,
             allowed_direction=AllowedDirection.SKIP,
@@ -103,16 +112,52 @@ def classify_direction(source: SpotGammaContext | RankedTicker) -> DirectionGate
             notes=_note_vrp_z(vrp_z),
         )
 
-    put_heavy = gamma_ratio is not None and gamma_ratio < _GAMMA_HEDGE_MAX
-    unstable_vol = vrp_z is not None and float(vrp_z) >= _VRPZ_UNSTABLE_MIN
-    is_hedge = put_heavy or unstable_vol
+    if regime in (RegimeLabel.BUY_PREMIUM, RegimeLabel.SQUEEZE_UP):
+        put_heavy = gamma_ratio is not None and gamma_ratio < _GAMMA_HEDGE_MAX
+        unstable_vol = vrp_z is not None and float(vrp_z) >= _VRPZ_UNSTABLE_MIN
+        is_hedge = put_heavy or unstable_vol
+
+        if is_hedge:
+            note = _hedge_notes_long(gamma_ratio, vrp_z, put_heavy, unstable_vol)
+            return DirectionGateResult(
+                ticker=ticker,
+                allowed_direction=AllowedDirection.LONG_GAMMA_HEDGE,
+                reason="negative_gamma_or_unstable_vol",
+                confidence=confidence,
+                regime_label=regime_label,
+                notes=note,
+            )
+
+        if vrp_z is None:
+            return DirectionGateResult(
+                ticker=ticker,
+                allowed_direction=AllowedDirection.SKIP,
+                reason="vrp_z_missing",
+                confidence=confidence,
+                regime_label=regime_label,
+                notes="vrp_z_required_for_long_only",
+            )
+
+        return DirectionGateResult(
+            ticker=ticker,
+            allowed_direction=AllowedDirection.LONG_ONLY,
+            reason="bullish_regime_sufficient_confidence",
+            confidence=confidence,
+            regime_label=regime_label,
+            notes=None,
+        )
+
+    # SELL_PREMIUM (bearish posture)
+    call_heavy = gamma_ratio is not None and gamma_ratio > (1.0 / _GAMMA_HEDGE_MAX)
+    unstable_vol_bearish = vrp_z is not None and float(vrp_z) <= _VRPZ_UNSTABLE_MAX
+    is_hedge = call_heavy or unstable_vol_bearish
 
     if is_hedge:
-        note = _hedge_notes(gamma_ratio, vrp_z, put_heavy, unstable_vol)
+        note = _hedge_notes_short(gamma_ratio, vrp_z, call_heavy, unstable_vol_bearish)
         return DirectionGateResult(
             ticker=ticker,
-            allowed_direction=AllowedDirection.LONG_GAMMA_HEDGE,
-            reason="negative_gamma_or_unstable_vol",
+            allowed_direction=AllowedDirection.SHORT_GAMMA_HEDGE,
+            reason="squeeze_risk_or_unstable_vol",
             confidence=confidence,
             regime_label=regime_label,
             notes=note,
@@ -125,13 +170,13 @@ def classify_direction(source: SpotGammaContext | RankedTicker) -> DirectionGate
             reason="vrp_z_missing",
             confidence=confidence,
             regime_label=regime_label,
-            notes="vrp_z_required_for_long_only",
+            notes="vrp_z_required_for_short_only",
         )
 
     return DirectionGateResult(
         ticker=ticker,
-        allowed_direction=AllowedDirection.LONG_ONLY,
-        reason="bullish_regime_sufficient_confidence",
+        allowed_direction=AllowedDirection.SHORT_ONLY,
+        reason="bearish_regime_sufficient_confidence",
         confidence=confidence,
         regime_label=regime_label,
         notes=None,
@@ -176,7 +221,10 @@ def _note_vrp_z(vrp_z: float | None) -> str | None:
     return None
 
 
-def _hedge_notes(
+_VRPZ_UNSTABLE_MAX: Final[float] = -0.75
+
+
+def _hedge_notes_long(
     gamma_ratio: float | None,
     vrp_z: float | None,
     put_heavy: bool,
@@ -187,5 +235,19 @@ def _hedge_notes(
         parts.append(f"put_heavy_gamma_ratio={gamma_ratio}")
     if unstable_vol:
         parts.append(f"vrp_z_unstable>={_VRPZ_UNSTABLE_MIN} (vrp_z={vrp_z})")
+    return "; ".join(parts)
+
+
+def _hedge_notes_short(
+    gamma_ratio: float | None,
+    vrp_z: float | None,
+    call_heavy: bool,
+    unstable_vol: bool,
+) -> str:
+    parts: list[str] = []
+    if call_heavy:
+        parts.append(f"call_heavy_gamma_ratio={gamma_ratio}")
+    if unstable_vol:
+        parts.append(f"vrp_z_unstable<={_VRPZ_UNSTABLE_MAX} (vrp_z={vrp_z})")
     return "; ".join(parts)
 
