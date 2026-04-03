@@ -237,6 +237,6 @@ data/*
 .cursor/
 .cursor/rules/
 
-# Src
-src
-src/
+
+/.cursor/rules
+/.cursor/rules

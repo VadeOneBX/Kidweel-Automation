@@ -4,8 +4,10 @@ src/qops/engine/paper_broker.py
 Paper-only simulated broker: full fills at candidate debit, no Alpaca, no Redis,
 no networking, no async, no persistence. In-memory audit trail only.
 
-Supports ``BULL_CALL_SPREAD`` only. Rejects unapproved trades, ``SKIP``,
-``LONG_CALL_PARKED``, and outcome/approval mismatches deterministically.
+Debit-spread simulation only: ``BULL_CALL_SPREAD`` and ``BEAR_PUT_SPREAD`` use
+the same dollar model (per-spread debit, max_loss as max_risk, max_profit scaled
+by quantity). Rejects unapproved trades, ``SKIP``, parked outcomes, and
+outcome/approval mismatches deterministically.
 
 Slippage: none beyond ``StructureCandidate.debit``. No partial fills, no order
 states, no routing.
@@ -19,6 +21,10 @@ from typing import Final
 
 from qops.engine.risk_guard import RiskApprovalResult
 from qops.strategy.spread_builder import BuildOutcome, StructureCandidate
+
+_EXECUTABLE_DEBIT_SPREADS: frozenset[BuildOutcome] = frozenset(
+    {BuildOutcome.BULL_CALL_SPREAD, BuildOutcome.BEAR_PUT_SPREAD}
+)
 
 # In-memory execution attempt log (both fills and rejections).
 _AUDIT: list["PaperExecutionResult"] = []
@@ -49,7 +55,7 @@ def execute_paper_trade(
 ) -> PaperExecutionResult:
     """
     Simulate a single full fill at ``candidate.debit`` per spread for
-    ``approval.capped_quantity`` spreads.
+    ``approval.capped_quantity`` spreads (bull call or bear put debit spread).
 
     If validation fails, returns ``executed=False`` with a rejection reason.
     Appends every attempt to the in-memory audit trail (success or failure).
@@ -80,7 +86,8 @@ def paper_audit_trail() -> tuple[PaperExecutionResult, ...]:
 
 def paper_positions_snapshot() -> dict[str, object]:
     """
-    Minimal aggregate of **executed** bull call spreads only (in-memory).
+    Minimal aggregate of **executed** auto-executable debit spreads (in-memory):
+    ``BULL_CALL_SPREAD`` and ``BEAR_PUT_SPREAD``.
 
     Keys: ``by_ticker`` (dict of ticker -> row dict with quantity, total_debit,
     max_risk, max_profit).
@@ -123,7 +130,9 @@ def _validate_approval(
         reasons.append("candidate_outcome_skip")
     elif candidate.outcome == BuildOutcome.LONG_CALL_PARKED:
         reasons.append("candidate_long_call_parked_not_executable")
-    elif candidate.outcome != BuildOutcome.BULL_CALL_SPREAD:
+    elif candidate.outcome == BuildOutcome.LONG_PUT_PARKED:
+        reasons.append("candidate_long_put_parked_not_executable")
+    elif candidate.outcome not in _EXECUTABLE_DEBIT_SPREADS:
         reasons.append(f"unsupported_structure:{candidate.outcome.value}")
     if approval.capped_quantity < 1:
         reasons.append("invalid_capped_quantity")
@@ -132,11 +141,18 @@ def _validate_approval(
     if candidate.max_loss <= 0:
         reasons.append("invalid_candidate_max_loss")
     if candidate.short_strike is None or candidate.width is None:
-        reasons.append("bull_call_missing_short_strike_or_width")
-    if candidate.long_strike >= (candidate.short_strike or 0):
-        reasons.append("invalid_strike_order")
+        reasons.append("debit_spread_missing_short_strike_or_width")
     if candidate.max_profit is None:
-        reasons.append("bull_call_missing_max_profit")
+        reasons.append("debit_spread_missing_max_profit")
+
+    short = candidate.short_strike
+    if candidate.outcome == BuildOutcome.BULL_CALL_SPREAD and short is not None:
+        if candidate.long_strike >= short:
+            reasons.append("invalid_bull_call_strike_order")
+    if candidate.outcome == BuildOutcome.BEAR_PUT_SPREAD and short is not None:
+        if candidate.long_strike <= short:
+            reasons.append("invalid_bear_put_strike_order")
+
     return reasons
 
 
@@ -158,7 +174,7 @@ def _build_execution_result(
     return PaperExecutionResult(
         executed=True,
         ticker=candidate.ticker.strip().upper(),
-        structure_type=BuildOutcome.BULL_CALL_SPREAD.value,
+        structure_type=candidate.outcome.value,
         strikes=strikes,
         expiry=candidate.expiry,
         quantity=qty,
@@ -166,7 +182,7 @@ def _build_execution_result(
         total_debit=total_debit,
         max_risk=max_risk,
         max_profit=max_profit,
-        notes="paper_full_fill;no_slippage;beyond_candidate_debit",
+        notes="paper_full_fill;no_additional_slippage",
         timestamp=timestamp,
         rejection_reason=None,
     )

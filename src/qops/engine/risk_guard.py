@@ -14,7 +14,12 @@ It accepts either:
 1) a pre-selected structure candidate, or
 2) a build result that contains exactly one candidate.
 
-Deterministic policy for multiple candidates:
+Auto-approval: BULL_CALL_SPREAD and BEAR_PUT_SPREAD only, when EV and risk caps
+pass and direction matches the spread (LONG_ONLY / SHORT_ONLY respectively).
+
+Review-only (never auto-approved here): LONG_CALL_PARKED, LONG_PUT_PARKED, SKIP.
+
+Deterministic policy for multiple tradeable candidates:
 - reject and require caller pre-selection.
 ─────────────────────────────────────────────────────────────────────────────
 """
@@ -24,6 +29,10 @@ from dataclasses import dataclass
 
 from qops.strategy.sg_direction_gate import AllowedDirection, DirectionGateResult
 from qops.strategy.spread_builder import BuildOutcome, BuildResult, StructureCandidate
+
+_AUTO_APPROVABLE: frozenset[BuildOutcome] = frozenset(
+    {BuildOutcome.BULL_CALL_SPREAD, BuildOutcome.BEAR_PUT_SPREAD}
+)
 
 
 @dataclass(frozen=True)
@@ -50,8 +59,11 @@ def approve(
     """
     Approve or reject one candidate for automated paper execution eligibility.
 
-    Approval is possible only for BULL_CALL_SPREAD candidates that pass EV and
-    conservative risk caps. LONG_CALL_PARKED and SKIP are always rejected.
+    Auto-approval: BULL_CALL_SPREAD (LONG_ONLY) or BEAR_PUT_SPREAD (SHORT_ONLY),
+    EV-pass, risk caps, ticker match. Parked outcomes and SKIP are rejected.
+
+    If ``require_direction_long_only`` is True, reject unless the direction gate
+    is LONG_ONLY (legacy sessions that only permit bullish flow).
     """
     reasons: list[str] = []
     candidate = _extract_candidate(selected_candidate=selected_candidate, build_result=build_result, reasons=reasons)
@@ -115,7 +127,10 @@ def _extract_candidate(
     if build_result.outcome == BuildOutcome.LONG_CALL_PARKED:
         reasons.append("build_result_long_call_parked_review_only")
         return None
-    if build_result.outcome != BuildOutcome.BULL_CALL_SPREAD:
+    if build_result.outcome == BuildOutcome.LONG_PUT_PARKED:
+        reasons.append("build_result_long_put_parked_review_only")
+        return None
+    if build_result.outcome not in _AUTO_APPROVABLE:
         reasons.append(f"unsupported_build_outcome:{build_result.outcome.value}")
         return None
     if not build_result.candidates:
@@ -130,9 +145,11 @@ def _extract_candidate(
 def _check_outcome_eligibility(candidate: StructureCandidate, reasons: list[str]) -> None:
     if candidate.outcome == BuildOutcome.LONG_CALL_PARKED:
         reasons.append("long_call_parked_not_auto_approvable")
+    elif candidate.outcome == BuildOutcome.LONG_PUT_PARKED:
+        reasons.append("long_put_parked_not_auto_approvable")
     elif candidate.outcome == BuildOutcome.SKIP:
         reasons.append("skip_not_auto_approvable")
-    elif candidate.outcome != BuildOutcome.BULL_CALL_SPREAD:
+    elif candidate.outcome not in _AUTO_APPROVABLE:
         reasons.append(f"unsupported_candidate_outcome:{candidate.outcome.value}")
 
 
@@ -142,12 +159,26 @@ def _check_direction_compatibility(
     candidate: StructureCandidate,
     reasons: list[str],
 ) -> None:
-    if direction.allowed_direction == AllowedDirection.SKIP:
+    ad = direction.allowed_direction
+    if ad == AllowedDirection.SKIP:
         reasons.append("direction_gate_skip")
-    if direction.allowed_direction == AllowedDirection.LONG_GAMMA_HEDGE:
-        reasons.append("direction_gate_hedge_review_only")
+    elif ad == AllowedDirection.LONG_GAMMA_HEDGE:
+        reasons.append("direction_gate_long_gamma_hedge_review_only")
+    elif ad == AllowedDirection.SHORT_GAMMA_HEDGE:
+        reasons.append("direction_gate_short_gamma_hedge_review_only")
+
     if direction.ticker.strip().upper() != candidate.ticker.strip().upper():
         reasons.append("direction_candidate_ticker_mismatch")
+
+    if candidate.outcome not in _AUTO_APPROVABLE:
+        return
+
+    if ad == AllowedDirection.LONG_ONLY and candidate.outcome != BuildOutcome.BULL_CALL_SPREAD:
+        reasons.append(f"direction_candidate_incompatible:{ad.value}:{candidate.outcome.value}")
+    elif ad == AllowedDirection.SHORT_ONLY and candidate.outcome != BuildOutcome.BEAR_PUT_SPREAD:
+        reasons.append(f"direction_candidate_incompatible:{ad.value}:{candidate.outcome.value}")
+    elif ad not in (AllowedDirection.LONG_ONLY, AllowedDirection.SHORT_ONLY):
+        reasons.append(f"direction_candidate_incompatible:{ad.value}:{candidate.outcome.value}")
 
 
 def _check_ev(*, candidate: StructureCandidate, require_ev_pass: bool, reasons: list[str]) -> None:
@@ -198,4 +229,3 @@ def _reject(reasons: list[str]) -> RiskApprovalResult:
         adjusted_risk=0.0,
         notes="; ".join(uniq) if uniq else "rejected",
     )
-
