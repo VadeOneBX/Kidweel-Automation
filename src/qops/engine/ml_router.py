@@ -8,12 +8,17 @@ No Alpaca, Redis, execution, training, model fitting, or side effects. This
 module is easy to bypass or delete: callers can ignore ``pass_ml_gate`` and
 rely solely on upstream gates.
 
+Debit spreads (``BULL_CALL_SPREAD``, ``BEAR_PUT_SPREAD``) are scored for
+advisory purposes. Parked outcomes and ``SKIP`` remain non-passing (never
+``pass_ml_gate``).
+
 Answers: *Given an already-built candidate, does optional model context support
 it?* — not whether to trade, how to build, size, or execute.
 ─────────────────────────────────────────────────────────────────────────────
 """
 from __future__ import annotations
 
+import importlib
 import importlib.util
 from dataclasses import dataclass
 from typing import Final, Literal
@@ -26,6 +31,13 @@ ScoreSource = Literal["model", "heuristic"]
 
 # Advisory only: conservative bar for pass_ml_gate.
 _ML_PASS_THRESHOLD: Final[float] = 0.62
+
+_ADVISORY_DEBIT_SPREADS: frozenset[BuildOutcome] = frozenset(
+    {
+        BuildOutcome.BULL_CALL_SPREAD,
+        BuildOutcome.BEAR_PUT_SPREAD,
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -103,7 +115,10 @@ def _heuristic_score(
     if candidate.outcome == BuildOutcome.LONG_CALL_PARKED:
         return 0.35, "heuristic_parked_review_only"
 
-    if candidate.outcome != BuildOutcome.BULL_CALL_SPREAD:
+    if candidate.outcome == BuildOutcome.LONG_PUT_PARKED:
+        return 0.35, "heuristic_parked_review_only"
+
+    if candidate.outcome not in _ADVISORY_DEBIT_SPREADS:
         return 0.0, f"heuristic_unsupported_outcome:{candidate.outcome.value}"
 
     score = 0.52
@@ -124,7 +139,7 @@ def _heuristic_score(
     score += _context_bonus(context)
 
     score = _clamp01(score)
-    return score, f"heuristic_bull_call_spread;{notes_ev}"
+    return score, f"heuristic_debit_spread;{candidate.outcome.value};{notes_ev}"
 
 
 def _context_bonus(context: SpotGammaContext | RankedTicker | None) -> float:
@@ -145,7 +160,9 @@ def _pass_ml_gate(
         return False
     if outcome == BuildOutcome.LONG_CALL_PARKED:
         return False
-    if outcome != BuildOutcome.BULL_CALL_SPREAD:
+    if outcome == BuildOutcome.LONG_PUT_PARKED:
+        return False
+    if outcome not in _ADVISORY_DEBIT_SPREADS:
         return False
     if candidate.pass_ev_gate is False:
         return False
