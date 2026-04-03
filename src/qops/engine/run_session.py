@@ -5,14 +5,20 @@ Top-level deterministic session orchestrator: wires normalize → context → ra
 → direction → spread build (includes EV) → ML advisory → risk approval →
 optional paper execution.
 
+Supports symmetric debit spreads: ``BULL_CALL_SPREAD`` and ``BEAR_PUT_SPREAD``.
+Parked outcomes (``LONG_CALL_PARKED``, ``LONG_PUT_PARKED``) and ``SKIP`` remain
+non-executable upstream; they still appear in build results for observability.
+
 No Alpaca fetching, no Redis, no ORB/UW/confluence. No new business rules;
-delegates to existing modules only.
+delegates to existing modules only. ML routing is advisory only—execution does
+not depend on ``pass_ml_gate``.
 
 ``execute_paper=False`` (default): never calls ``trade_executor`` / paper broker;
 ``execution_results`` is empty and session ``notes`` record that.
 
-Candidate policy: if a ticker produces more than one spread candidate, ML / risk /
-execution are skipped for that ticker (caller must pre-select one candidate).
+Candidate policy: if a ticker produces more than one spread candidate for a
+debit-spread build outcome, ML / risk / execution are skipped for that ticker
+(caller must pre-select one candidate).
 ─────────────────────────────────────────────────────────────────────────────
 """
 from __future__ import annotations
@@ -32,10 +38,22 @@ from qops.engine.trade_executor import TradeExecutionResult, execute_trade
 from qops.strategy.sg_direction_gate import DirectionGateResult, evaluate
 from qops.strategy.spread_builder import BuildOutcome, BuildResult, StructureCandidate, build
 
+_DEBIT_SPREAD_OUTCOMES: frozenset[BuildOutcome] = frozenset(
+    {
+        BuildOutcome.BULL_CALL_SPREAD,
+        BuildOutcome.BEAR_PUT_SPREAD,
+    }
+)
+
 
 @dataclass(frozen=True)
 class RiskRunParams:
-    """Explicit risk guard inputs (no hidden semantics)."""
+    """Explicit risk guard inputs (no hidden semantics).
+
+    Session defaults use ``require_direction_long_only=False`` so both long and
+    short debit-spread directions can pass the risk gate when aligned with the
+    direction gate.
+    """
 
     max_risk_per_trade: float
     max_debit_allowed: float
@@ -84,6 +102,9 @@ def run_session(
       per ticker (see ``_ensure_normalized``).
     * ``chains_by_ticker``: pre-supplied option chain rows per ticker; missing
       key → empty chain.
+
+    Build outcomes may be bull call, bear put, parked, or skip. Executable
+    filtering for paper is delegated to ``trade_executor`` / ``paper_broker``.
     """
     ts = started_at or datetime.now(timezone.utc)
     if ts.tzinfo is None:
@@ -93,7 +114,7 @@ def run_session(
         max_debit_allowed=5_000.0,
         max_loss_allowed=5_000.0,
         require_ev_pass=True,
-        require_direction_long_only=True,
+        require_direction_long_only=False,
     )
     sp = spread_params or SpreadRunParams(
         min_dte=7,
@@ -137,10 +158,10 @@ def run_session(
         br = build_results[t]
         sel = _select_single_candidate_or_none(br)
         if sel is None:
-            if br.outcome == BuildOutcome.BULL_CALL_SPREAD and len(br.candidates) > 1:
+            if br.outcome in _DEBIT_SPREAD_OUTCOMES and len(br.candidates) > 1:
                 note_parts.append(f"{t}:multiple_spread_candidates_skipped_ml_risk_exec")
-            elif br.outcome == BuildOutcome.LONG_CALL_PARKED:
-                note_parts.append(f"{t}:parked_call_review_only")
+            elif br.outcome in (BuildOutcome.LONG_CALL_PARKED, BuildOutcome.LONG_PUT_PARKED):
+                note_parts.append(f"{t}:parked_review_only")
             elif br.outcome == BuildOutcome.SKIP:
                 note_parts.append(f"{t}:build_skip")
             ml_results[t] = None
