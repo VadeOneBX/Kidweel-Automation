@@ -1,7 +1,8 @@
 """
 src/qops/engine/trade_executor.py
 ─────────────────────────────────────────────────────────────────────────────
-Thin orchestration glue between risk approval and paper execution.
+Thin orchestration glue between risk approval and paper execution (bull call
+and bear put debit spreads).
 
 This module does not add decision logic, sizing, or fill modeling. It only:
 1) performs minimal pre-submit eligibility checks, then
@@ -16,6 +17,10 @@ from datetime import datetime
 from qops.engine.paper_broker import PaperExecutionResult, execute_paper_trade
 from qops.engine.risk_guard import RiskApprovalResult
 from qops.strategy.spread_builder import BuildOutcome, StructureCandidate
+
+_EXECUTABLE_OUTCOMES: frozenset[BuildOutcome] = frozenset(
+    {BuildOutcome.BULL_CALL_SPREAD, BuildOutcome.BEAR_PUT_SPREAD}
+)
 
 
 @dataclass(frozen=True)
@@ -43,7 +48,8 @@ def execute_trade(
 
     Rules:
     - If approval is missing/false, do not submit.
-    - If candidate is missing or not ``BULL_CALL_SPREAD``, do not submit.
+    - If candidate is missing or not a supported debit spread
+      (``BULL_CALL_SPREAD`` / ``BEAR_PUT_SPREAD``), do not submit.
     - Otherwise call ``execute_paper_trade`` once. ``submitted`` is True only
       when the paper broker reports ``executed`` (full fill).
     """
@@ -109,7 +115,7 @@ def _pre_submit_validation(
             paper_result=None,
             notes="approval_false_not_submitted",
         )
-    if candidate.outcome != BuildOutcome.BULL_CALL_SPREAD:
+    if candidate.outcome not in _EXECUTABLE_OUTCOMES:
         return TradeExecutionResult(
             attempted=True,
             submitted=False,
