@@ -853,8 +853,8 @@ The official VS Code setup document is available here: https://code.visualstudio
     ```
 
     **Note:** Replace `${workspaceFolder}` with your actual project path. For example:
-      - Linux/macOS: `/Users/username/Documents/alpaca-mcp-server`
-      - Windows: `C:\\Users\\username\\Documents\\alpaca-mcp-server`
+      - Linux/macOS: `~/Documents/alpaca-mcp-server`
+      - Windows: `%USERPROFILE%\\Documents\\alpaca-mcp-server`
     
 
 **For user-wide settings:**
